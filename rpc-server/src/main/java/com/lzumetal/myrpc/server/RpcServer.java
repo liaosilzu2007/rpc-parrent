@@ -1,6 +1,14 @@
 package com.lzumetal.myrpc.server;
 
 import com.lzumetal.myrpc.server.annotation.MyRpcService;
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -13,6 +21,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 import javax.imageio.spi.ServiceRegistry;
+import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -54,6 +63,32 @@ public class RpcServer implements ApplicationContextAware, InitializingBean {
 
     @Override
     public void afterPropertiesSet() throws Exception {
+        EventLoopGroup bossGroup = new NioEventLoopGroup();
+        EventLoopGroup workerGroup = new NioEventLoopGroup();
+        ServerBootstrap bootstrap = new ServerBootstrap();
+        bootstrap.group(bossGroup, workerGroup)
+                .channel(NioServerSocketChannel.class)
+                .childHandler(new ChannelInitializer<SocketChannel>() {
+
+                    @Override
+                    protected void initChannel(SocketChannel socketChannel) throws Exception {
+                        ChannelPipeline pipeline = socketChannel.pipeline();
+                        pipeline.addLast(new RpcDecoder(RpcRequest.class));
+                        pipeline.addLast(new RpcEecoder(RpcRequest.class));
+                        pipeline.addLast(new RpcServerHandler(handlerMap));
+
+                    }
+                });
+
+        ChannelFuture channelFuture = bootstrap.bind(port).sync();
+        log.error("server started, listening on {}", port);
+
+        //注册rpc地址
+        String serverAddress = InetAddress.getLocalHost().getHostAddress() + ":" + port;
+        for (String interfaceName : handlerMap.keySet()) {
+            serviceRegistry.register
+            
+        }
 
     }
 }
