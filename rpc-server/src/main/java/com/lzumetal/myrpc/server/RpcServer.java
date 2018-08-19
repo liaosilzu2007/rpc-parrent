@@ -76,7 +76,6 @@ public class RpcServer implements ApplicationContextAware, InitializingBean {
                         pipeline.addLast(new RpcDecoder(RpcRequest.class));
                         pipeline.addLast(new RpcEecoder(RpcRequest.class));
                         pipeline.addLast(new RpcServerHandler(handlerMap));
-
                     }
                 });
 
