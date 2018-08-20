@@ -1,6 +1,11 @@
 package com.lzumetal.myrpc.server;
 
+import com.lzumetal.myrpc.common.bean.RpcRequest;
+import com.lzumetal.myrpc.common.decode.RpcDecoder;
+import com.lzumetal.myrpc.common.encode.RpcEncoder;
+import com.lzumetal.myrpc.registry.ServiceRegistry;
 import com.lzumetal.myrpc.server.annotation.MyRpcService;
+import com.lzumetal.myrpc.server.handler.RpcServerHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -20,7 +25,6 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
-import javax.imageio.spi.ServiceRegistry;
 import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Map;
@@ -65,29 +69,41 @@ public class RpcServer implements ApplicationContextAware, InitializingBean {
     public void afterPropertiesSet() throws Exception {
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
-        ServerBootstrap bootstrap = new ServerBootstrap();
-        bootstrap.group(bossGroup, workerGroup)
-                .channel(NioServerSocketChannel.class)
-                .childHandler(new ChannelInitializer<SocketChannel>() {
 
-                    @Override
-                    protected void initChannel(SocketChannel socketChannel) throws Exception {
-                        ChannelPipeline pipeline = socketChannel.pipeline();
-                        pipeline.addLast(new RpcDecoder(RpcRequest.class));
-                        pipeline.addLast(new RpcEecoder(RpcRequest.class));
-                        pipeline.addLast(new RpcServerHandler(handlerMap));
-                    }
-                });
+        try {
+            //启动RPC服务
+            ServerBootstrap bootstrap = new ServerBootstrap();
+            bootstrap.group(bossGroup, workerGroup)
+                    .channel(NioServerSocketChannel.class)
+                    .childHandler(new ChannelInitializer<SocketChannel>() {
 
-        ChannelFuture channelFuture = bootstrap.bind(port).sync();
-        log.error("server started, listening on {}", port);
+                        @Override
+                        protected void initChannel(SocketChannel socketChannel) throws Exception {
+                            ChannelPipeline pipeline = socketChannel.pipeline();
+                            pipeline.addLast(new RpcDecoder(RpcRequest.class));
+                            pipeline.addLast(new RpcEncoder(RpcRequest.class));
+                            pipeline.addLast(new RpcServerHandler(handlerMap));
+                        }
+                    });
 
-        //注册rpc地址
-        String serverAddress = InetAddress.getLocalHost().getHostAddress() + ":" + port;
-        for (String interfaceName : handlerMap.keySet()) {
-            serviceRegistry.register
-            
+            ChannelFuture channelFuture = bootstrap.bind(port).sync();
+            log.error("server started, listening on {}", port);
+
+            //注册RPC服务地址
+            String serverAddress = InetAddress.getLocalHost().getHostAddress() + ":" + port;
+            for (String interfaceName : handlerMap.keySet()) {
+                serviceRegistry.registry(interfaceName, serverAddress);
+                log.error("registry service: {} ====> {}", interfaceName, serverAddress);
+            }
+
+            //释放资源
+            channelFuture.channel().closeFuture().sync();
+        } catch (Exception e) {
+            log.error("server exception: ", e);
+        } finally {
+            //关闭RPC服务
+            workerGroup.shutdownGracefully();
+            bossGroup.shutdownGracefully();
         }
-
     }
 }

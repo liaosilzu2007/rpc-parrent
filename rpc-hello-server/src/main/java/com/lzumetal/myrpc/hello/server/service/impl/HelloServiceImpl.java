@@ -1,4 +1,4 @@
-package com.lzumetal.myrpc.hello.server;
+package com.lzumetal.myrpc.hello.server.service.impl;
 
 import com.lzumetal.myrpc.hello.api.HelloService;
 import com.lzumetal.myrpc.server.annotation.MyRpcService;
