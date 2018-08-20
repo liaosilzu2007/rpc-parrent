@@ -9,6 +9,7 @@ import javax.annotation.PostConstruct;
 import javax.security.auth.login.Configuration;
 
 /**
+ * 服务注册
  * @author liaosi
  * @date 2018-08-18
  */
