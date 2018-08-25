@@ -5,14 +5,16 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
  * Rpc解码器
+ *
  * @author liaosi
  * @date 2018-08-19
  */
-public class RpcDecoder extends ByteToMessageDecoder{
+public class RpcDecoder extends ByteToMessageDecoder {
 
     private Class<?> genericClass;
 
@@ -21,7 +23,6 @@ public class RpcDecoder extends ByteToMessageDecoder{
     }
 
     /**
-     *
      * @param channelHandlerContext
      * @param byteBuf
      * @param out
